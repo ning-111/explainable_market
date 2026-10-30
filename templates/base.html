@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Explainable Market{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if session.user_id %}
+<nav class="topnav">
+  <a class="brand" href="{{ url_for('dashboard') }}">
+    <span class="brand-mark">EM</span> Explainable&nbsp;Market
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('watchlist') }}" class="{{ 'active' if request.endpoint == 'watchlist' }}">Watchlist</a>
+    <a href="{{ url_for('news_page') }}" class="{{ 'active' if request.endpoint == 'news_page' }}">News</a>
+  </div>
+  <div class="nav-user">
+    <span class="user-chip">{{ session.username }}</span>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('logout') }}">Sign out</a>
+  </div>
+</nav>
+{% endif %}
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">
+  Explainable Market — demo build. Prices and news are generated sample data for demonstration purposes.
+</footer>
+</body>
+</html>

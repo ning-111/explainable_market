@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Watchlist · Explainable Market{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Watchlist</h1>
+  <p class="muted">Track the symbols you care about. Add or remove them below.</p>
+</div>
+
+<section class="card">
+  <h2>My symbols ({{ watch|length }})</h2>
+  {% if watch %}
+  <table class="table">
+    <thead><tr><th>Symbol</th><th>Name</th><th>Sector</th><th class="num"></th></tr></thead>
+    <tbody>
+    {% for row in watch %}
+      <tr>
+        <td><a class="ticker" href="{{ url_for('symbol_detail', ticker=row.ticker) }}">{{ row.ticker }}</a></td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.sector }}</td>
+        <td class="num">
+          <form method="post" class="inline-form">
+            <input type="hidden" name="ticker" value="{{ row.ticker }}">
+            <input type="hidden" name="action" value="remove">
+            <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nothing here yet — add symbols from the list below.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Available symbols</h2>
+    <input id="symbol-filter" class="input" type="search" placeholder="Filter by ticker, name or sector…" autocomplete="off">
+  </div>
+  <table class="table" id="symbols-table">
+    <thead><tr><th>Symbol</th><th>Name</th><th>Sector</th><th class="num"></th></tr></thead>
+    <tbody>
+    {% for s in all_symbols %}
+      <tr data-filter="{{ s.ticker }} {{ s.name }} {{ s.sector }}">
+        <td><a class="ticker" href="{{ url_for('symbol_detail', ticker=s.ticker) }}">{{ s.ticker }}</a></td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.sector }}</td>
+        <td class="num">
+          {% if s.ticker in watch_tickers %}
+            <span class="badge badge-ok">On watchlist</span>
+          {% else %}
+          <form method="post" class="inline-form">
+            <input type="hidden" name="ticker" value="{{ s.ticker }}">
+            <input type="hidden" name="action" value="add">
+            <button class="btn btn-primary btn-sm" type="submit">Add</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<script>
+  document.getElementById('symbol-filter').addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#symbols-table tbody tr').forEach(function (tr) {
+      tr.style.display = tr.dataset.filter.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ sym.ticker }} · Explainable Market{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1><span class="ticker big">{{ sym.ticker }}</span> {{ sym.name }}</h1>
+    <p class="muted">{{ sym.sector }} · sample data, last 120 trading days</p>
+  </div>
+  <form method="post" action="{{ url_for('watchlist') }}" class="inline-form">
+    <input type="hidden" name="ticker" value="{{ sym.ticker }}">
+    <input type="hidden" name="action" value="{{ 'remove' if on_watchlist else 'add' }}">
+    <button class="btn {{ 'btn-danger' if on_watchlist else 'btn-primary' }}" type="submit">
+      {{ 'Remove from watchlist' if on_watchlist else 'Add to watchlist' }}
+    </button>
+  </form>
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="stat-label">Last close</div>
+    <div class="stat-value">{{ "%.2f"|format(close) }}</div></div>
+  <div class="stat"><div class="stat-label">Day change</div>
+    <div class="stat-value {{ 'pos' if change >= 0 else 'neg' }}">{{ change|pct }}</div></div>
+  <div class="stat"><div class="stat-label">Period change</div>
+    <div class="stat-value {{ 'pos' if period_change >= 0 else 'neg' }}">{{ period_change|pct }}</div></div>
+  <div class="stat"><div class="stat-label">Period high / low</div>
+    <div class="stat-value small-num">{{ "%.2f"|format(high) }} / {{ "%.2f"|format(low) }}</div></div>
+  <div class="stat"><div class="stat-label">Related news</div>
+    <div class="stat-value">{{ news_count }}</div></div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Price &amp; news timeline</h2>
+    <div class="legend">
+      <span class="dot dot-pos"></span> Positive news
+      <span class="dot dot-neg"></span> Negative news
+      <span class="dot dot-neutral"></span> Neutral
+      <span class="dot dot-market"></span> Market-wide event (dashed line)
+    </div>
+  </div>
+  <p class="muted small">Hover a dot on the chart to see the headline behind that move.</p>
+  {{ chart|safe }}
+</section>
+
+<section class="card">
+  <h2>News impact analysis</h2>
+  <p class="muted small">For each event: the symbol's move on the news day, the move over the following 3 sessions,
+    and whether the price reaction was consistent with the news sentiment.</p>
+  <table class="table">
+    <thead><tr>
+      <th>Date</th><th>News</th><th>Sentiment</th>
+      <th class="num">Day move</th><th class="num">3-day move</th><th>Reaction</th>
+    </tr></thead>
+    <tbody>
+    {% for it in impacts %}
+      <tr>
+        <td class="nowrap">{{ it.news.published }}</td>
+        <td>
+          <div class="news-headline">{{ it.news.headline }}</div>
+          <div class="muted small">
+            {{ it.news.source }}{% if it.news.is_market %} · <span class="badge badge-mute">Market-wide</span>{% endif %}
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-{{ 'pos' if it.news.sentiment > 0 else ('neg' if it.news.sentiment < 0 else 'neutral') }}">
+            {{ sentiment_label[it.news.sentiment] }}</span>
+        </td>
+        <td class="num {{ 'pos' if (it.day_move or 0) >= 0 else 'neg' }}">{{ it.day_move|pct }}</td>
+        <td class="num {{ 'pos' if (it.post_move or 0) >= 0 else 'neg' }}">{{ it.post_move|pct }}</td>
+        <td>
+          {% if it.day_move is none %}<span class="muted small">n/a</span>
+          {% elif it.news.sentiment == 0 %}<span class="badge badge-neutral">n/a</span>
+          {% elif it.consistent %}<span class="badge badge-ok">Consistent</span>
+          {% else %}<span class="badge badge-warn">Contrarian</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

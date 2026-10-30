@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Explainable Market{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <p class="muted">Your watchlist at a glance — with the news behind today's moves.</p>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>My Watchlist</h2>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('watchlist') }}">Manage watchlist</a>
+  </div>
+  {% if watch %}
+  <table class="table">
+    <thead><tr>
+      <th>Symbol</th><th class="num">Last</th><th class="num">Day</th>
+      <th>30D trend</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for row in watch %}
+      <tr>
+        <td>
+          <a class="ticker" href="{{ url_for('symbol_detail', ticker=row.ticker) }}">{{ row.ticker }}</a>
+          <div class="muted small">{{ row.name }}</div>
+        </td>
+        <td class="num">{{ "%.2f"|format(row.close) }}</td>
+        <td class="num {{ 'pos' if row.change >= 0 else 'neg' }}">{{ row.change|pct }}</td>
+        <td>{{ row.sparkline|safe }}</td>
+        <td class="num"><a class="btn btn-ghost btn-sm" href="{{ url_for('symbol_detail', ticker=row.ticker) }}">Why?</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Your watchlist is empty. <a href="{{ url_for('watchlist') }}">Add some symbols</a> to get started.</p>
+  {% endif %}
+</section>
+
+<div class="two-col">
+  <section class="card">
+    <h2>Top Movers &amp; Explanations</h2>
+    <p class="muted small">Largest moves in your watchlist on the latest trading day, matched to the most relevant news.</p>
+    {% for m in movers %}
+    <div class="mover">
+      <div class="mover-line">
+        <a class="ticker" href="{{ url_for('symbol_detail', ticker=m.ticker) }}">{{ m.ticker }}</a>
+        <span class="{{ 'pos' if m.change >= 0 else 'neg' }} move-big">{{ m.change|pct }}</span>
+        <span class="muted small">on {{ m.date }}</span>
+        {% if m.news %}<span class="badge badge-ok">Explained</span>
+        {% else %}<span class="badge badge-mute">No related news</span>{% endif %}
+      </div>
+      {% if m.news %}
+      <div class="explanation">
+        <span class="badge badge-{{ 'pos' if m.news.sentiment > 0 else ('neg' if m.news.sentiment < 0 else 'neutral') }}">
+          {{ sentiment_label[m.news.sentiment] }}{% if m.news.is_market %} · market-wide{% endif %}</span>
+        <strong>{{ m.news.headline }}</strong>
+        <span class="muted small">— {{ m.news.source }}, {{ m.news.published }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Latest News</h2>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('news_page') }}">All news</a>
+    </div>
+    {% for item in recent_news %}
+    <div class="news-item">
+      <div class="news-meta">
+        <span class="badge badge-{{ 'pos' if item.sentiment > 0 else ('neg' if item.sentiment < 0 else 'neutral') }}">
+          {{ sentiment_label[item.sentiment] }}</span>
+        <span class="muted small">{{ item.published }} · {{ item.source }}</span>
+        {% if item.ticker %}
+        <a class="ticker small" href="{{ url_for('symbol_detail', ticker=item.ticker) }}">{{ item.ticker }}</a>
+        {% elif item.is_market %}
+        <span class="badge badge-mute">Market-wide</span>
+        {% endif %}
+      </div>
+      <div class="news-headline">{{ item.headline }}</div>
+    </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

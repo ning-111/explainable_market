@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}News · Explainable Market{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>News</h1>
+    <p class="muted">Collected headlines mapped to symbols, with the price reaction of the linked symbol.</p>
+  </div>
+  <form method="post" action="{{ url_for('news_collect') }}" class="inline-form">
+    <button class="btn btn-primary" type="submit">Collect news now</button>
+  </form>
+</div>
+
+<section class="card">
+  <form method="get" class="filter-bar">
+    <label>Symbol
+      <select name="ticker" class="input">
+        <option value="">All</option>
+        {% for s in symbols %}
+        <option value="{{ s.ticker }}" {{ 'selected' if sel_ticker == s.ticker }}>{{ s.ticker }} — {{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Sentiment
+      <select name="sentiment" class="input">
+        <option value="">All</option>
+        <option value="1" {{ 'selected' if sel_sentiment == 1 }}>Positive</option>
+        <option value="0" {{ 'selected' if sel_sentiment == 0 }}>Neutral</option>
+        <option value="-1" {{ 'selected' if sel_sentiment == -1 }}>Negative</option>
+      </select>
+    </label>
+    <button class="btn btn-ghost" type="submit">Apply filter</button>
+    <a class="btn btn-ghost" href="{{ url_for('news_page') }}">Reset</a>
+  </form>
+</section>
+
+{% for item in items %}
+<div class="card news-card">
+  <div class="news-meta">
+    <span class="badge badge-{{ 'pos' if item.n.sentiment > 0 else ('neg' if item.n.sentiment < 0 else 'neutral') }}">
+      {{ sentiment_label[item.n.sentiment] }}</span>
+    <span class="muted small">{{ item.n.published }} · {{ item.n.source }}</span>
+    {% if item.n.ticker %}
+      <a class="ticker" href="{{ url_for('symbol_detail', ticker=item.n.ticker) }}">{{ item.n.ticker }}</a>
+    {% elif item.n.is_market %}
+      <span class="badge badge-mute">Market-wide</span>
+    {% endif %}
+    {% if item.impact is not none %}
+      <span class="impact-chip {{ 'pos' if item.impact >= 0 else 'neg' }}">
+        {{ item.n.ticker }} reacted {{ item.impact|pct }}</span>
+    {% endif %}
+  </div>
+  <div class="news-headline big">{{ item.n.headline }}</div>
+  <p class="muted">{{ item.n.summary }}</p>
+</div>
+{% else %}
+<section class="card"><p class="muted">No news matches the current filter.</p></section>
+{% endfor %}
+{% endblock %}
